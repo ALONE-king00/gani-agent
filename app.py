@@ -19,9 +19,9 @@ Provide:
 def home():
     return "GANI AI Agent Running"
 
-@app.route("/ask", methods=["POST"])
+@app.route('/ask', methods=['GET','POST'])
 def ask():
-    prompt = request.json["prompt"]
+   prompt = request.args.get("prompt") or request.json.get("prompt")
     model = genai.GenerativeModel("gemini-1.5-flash")
     response = model.generate_content(SYSTEM_PROMPT + prompt)
     return {"response": response.text}
