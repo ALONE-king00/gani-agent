@@ -21,9 +21,11 @@ def home():
 
 @app.route('/ask', methods=['GET','POST'])
 def ask():
-prompt = request.args.get("prompt") or (request.json and request.json.get("prompt"))
-model = genai.GenerativeModel("gemini-1.5-flash")
-response = model.generate_content(SYSTEM_PROMPT + prompt)
-    return {"response": response.text}
+    prompt = request.args.get("prompt") or (request.json and request.json.get("prompt"))
+    if not prompt:
+        return {"error": "No prompt provided"}
 
-app.run(host="0.0.0.0", port=8080)
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    response = model.generate_content(SYSTEM_PROMPT + prompt)
+    return {"response": response.text}
+app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
