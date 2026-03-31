@@ -1,7 +1,7 @@
 from flask import Flask, request
 import os
 import json
-from google import genai  # <-- NEW GOOGLE LIBRARY
+from google import genai
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -69,4 +69,30 @@ def ask():
 
     try:
         # Fetch memory
-        user_ref = db.collection(“
+        user_ref = db.collection("users").document(user_id)
+        doc = user_ref.get()
+        
+        history_text = ""
+        if doc.exists:
+            history = doc.to_dict().get("chat_history", [])
+            history_text = "\n".join(history[-5:])
+
+        # Call AI (Using NEW SDK format and Upgraded Model)
+        full_prompt = f"{SYSTEM_PROMPT}\n\nRecent History:\n{history_text}\n\nUser: {prompt}"
+        
+        response = ai_client.models.generate_content(
+            model='gemini-2.0-flash', 
+            contents=full_prompt
+        )
+        ai_reply = response.text
+
+        # Save to memory
+        new_interaction = f"User: {prompt}\nGANI: {ai_reply}"
+        user_ref.set({
+            "chat_history": firestore.ArrayUnion([new_interaction])
+        }, merge=True)
+
+        return {"response": ai_reply}
+
+    except Exception as e:
+        return {"error": f"Something went wrong during AI generation: {str(e)}"}
